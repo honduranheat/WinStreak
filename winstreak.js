@@ -2,7 +2,7 @@ const inquirer = require("inquirer");
 const mysql = require("mysql");
 const goalsArr = [];
 let choices = [];
-const quotes = [];
+const quotes = require('./quotes');
 let delKey;
 let upKey;
 
@@ -172,7 +172,6 @@ function deleteGoal() {
         },
         function(err, res) {
           console.log(res.affectedRows + " goal deleted\n");
-          
           divert();
         }
       );
