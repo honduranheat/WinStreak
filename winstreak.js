@@ -1,6 +1,10 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const goalsArr = [];
+let choices = [];
+const quotes = [];
+let delKey;
+let upKey;
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -10,14 +14,10 @@ const connection = mysql.createConnection({
   database: "winstreakdb"
 });
 
-// const transition = setTimeout(() => {
-//   divert();
-// }, 2000);
-
 connection.connect(function(err) {
   if (err) throw err;
   console.log("connected as id " + connection.threadId);
-  home();
+  getGoalsArr();
 });
 
 function home() {
@@ -39,7 +39,7 @@ function home() {
       if (answers.stepone === "Create new goal") {
         createGoal();
       } else if (answers.stepone === "Update Goal") {
-        getGoalsArr();
+        updateGoal();
       } else if (answers.stepone === "Delete Goal") {
         console.log("Delete");
         deleteGoal();
@@ -99,19 +99,21 @@ function createGoal() {
 }
 
 function getGoalsArr() {
-  connection.query("SELECT Goal, DaysCompleted FROM tasklist", function(err, res) {
+  choices = [];
+
+  connection.query("SELECT Goal, DaysCompleted FROM tasklist", function(
+    err,
+    res
+  ) {
     if (err) throw err;
     console.log("\n");
     for (let i = 0; i < res.length; i++) {
-      // console.log(`${res[i].Goal}`);
       goalsArr.push(res[i]);
-      //console.log(res);
+      choices.push(res[i].Goal);
     }
-    console.log(goalsArr);
-    //console.log(res);
     console.log("\n");
-    //console.log(goalsArr);
-   // updateGoal();
+
+    home();
   });
 }
 
@@ -122,33 +124,58 @@ function updateGoal() {
         name: "goal",
         message: "Which goal are you updating?",
         type: "list",
-        choices: [goalsArr[]]
+        choices: choices
       },
       {
-        name: "update",
+        name: "streak",
         message: "Enter new streak"
       }
     ])
     .then(answers => {
-      //console.log(answers.choose);
+      console.log(answers.goal);
+      console.log(answers.streak);
+      connection.query(
+        `UPDATE tasklist SET ? WHERE ?`,
+        [
+          {
+            DaysCompleted: answers.streak
+          },
+          {
+            Goal: answers.goal
+          }
+        ],
+        (err, res) => {
+          if (err) throw err;
+          setTimeout(() => {
+            divert();
+          }, 2000);
+        }
+      );
+    });
+}
 
-      // connection.query(
-      //   `UPDATE tasklist SET ? WHERE ?`,
-      //   [
-      //     {
-      //       DaysCompleted: answers.update
-      //     },
-      //     {
-      //       Goal: answers.goal
-      //     }
-      //   ],
-      //   (err, res) => {
-      //     if (err) throw err;
-      //     setTimeout(() => {
-      //       divert();
-      //     }, 2000);
-      //   }
-      // );
+function deleteGoal() {
+  inquirer
+    .prompt([
+      {
+        name: "choose",
+        message: "Which goal would you like to end?",
+        type: "list",
+        choices: choices
+      }
+    ])
+    .then(answers => {
+      connection.query(
+        "DELETE FROM tasklist WHERE ?",
+        {
+          Goal: answers.choose
+        },
+        function(err, res) {
+          console.log(res.affectedRows + " goal deleted\n");
+          
+          divert();
+        }
+      );
     });
 }
 
@@ -162,7 +189,7 @@ function divert() {
       }
     ])
     .then(answers => {
-      if (answers) {
+      if (answers.question === true) {
         home();
       } else {
         exitWinStreak();
@@ -171,6 +198,6 @@ function divert() {
 }
 
 function exitWinStreak() {
-  console.log("See you later");
+  console.log("Good luck warrior!");
   connection.end();
 }
