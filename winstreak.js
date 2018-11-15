@@ -20,6 +20,24 @@ connection.connect(function(err) {
   getGoalsArr();
 });
 
+function getGoalsArr() {
+  choices = [];
+
+  connection.query("SELECT Goal, DaysCompleted FROM tasklist", function(
+    err,
+    res
+  ) {
+    if (err) throw err;
+    console.log("\n");
+    for (let i = 0; i < res.length; i++) {
+      goalsArr.push(res[i]);
+      choices.push(res[i].Goal);
+    }
+    console.log("\n");
+    home();
+  });
+}
+
 function home() {
   inquirer
     .prompt([
@@ -89,33 +107,20 @@ function createGoal() {
           DaysCompleted: `${answers.streak}`
         },
         function(err, res) {
+          //choices.push(res.Goal);
+          //console.log(choices);
           if (err) throw err;
           setTimeout(() => {
             checkProgress();
           }, 2000);
         }
       );
+      choices.push(answers.goal);
+      //console.log(choices);
     });
 }
 
-function getGoalsArr() {
-  choices = [];
 
-  connection.query("SELECT Goal, DaysCompleted FROM tasklist", function(
-    err,
-    res
-  ) {
-    if (err) throw err;
-    console.log("\n");
-    for (let i = 0; i < res.length; i++) {
-      goalsArr.push(res[i]);
-      choices.push(res[i].Goal);
-    }
-    console.log("\n");
-
-    home();
-  });
-}
 
 function updateGoal() {
   inquirer
@@ -128,12 +133,12 @@ function updateGoal() {
       },
       {
         name: "streak",
-        message: "Enter new streak"
+        message: "Update your progress."
       }
     ])
     .then(answers => {
-      console.log(answers.goal);
-      console.log(answers.streak);
+     // console.log(answers.goal);
+     // console.log(answers.streak);
       connection.query(
         `UPDATE tasklist SET ? WHERE ?`,
         [
@@ -175,6 +180,11 @@ function deleteGoal() {
           divert();
         }
       );
+      let index = choices.indexOf(answers.choose);
+      if (index) {
+        choices.splice(index, 1);
+  
+      }
     });
 }
 
